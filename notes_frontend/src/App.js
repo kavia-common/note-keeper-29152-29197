@@ -6,6 +6,7 @@ import Sidebar from './components/Layout/Sidebar';
 import { NotesList, NoteView, NoteEditor } from './components/Notes';
 import notesApi from './api/notesApi';
 import { useNotesContext, NotesActionTypes } from './context/NotesContext';
+import { useAppRouter, RouterProvider } from './routes/AppRouter';
 
 /**
  * Root application shell for the Notes app.
@@ -13,9 +14,10 @@ import { useNotesContext, NotesActionTypes } from './context/NotesContext';
  * Includes keyboard shortcut for save (Ctrl/Cmd+S) and inline error handling via context.
  */
 // PUBLIC_INTERFACE
-function App() {
+function AppInner() {
   const [theme, setTheme] = useState('light');
   const { state, actions, dispatch } = useNotesContext();
+  const { selectedId, navigate } = useAppRouter();
 
   // Apply theme to document root so CSS variables update globally
   useEffect(() => {
@@ -49,6 +51,9 @@ function App() {
   }, [actions]);
 
   // Keyboard shortcut: Ctrl/Cmd+S to save when editing
+  const currentNote = selectedId ? state.notesById[selectedId] : null;
+  const [editMode, setEditMode] = useState(false);
+
   useEffect(() => {
     function handleKeyDown(e) {
       const isSave = (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S');
@@ -57,9 +62,6 @@ function App() {
       e.preventDefault();
 
       if (editMode && currentNote) {
-        // Save current edits using draft buffer if available (NoteEditor passes via onSave)
-        // Here we no-op; actual save triggers via form submit in NoteEditor.
-        // Keeping the handler to satisfy requirement and prevent default page save.
         const form = document.querySelector('form[aria-label="Edit note"]');
         if (form) {
           form.requestSubmit?.();
@@ -68,14 +70,19 @@ function App() {
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  });
+  }, [editMode, currentNote]);
+
+  // Return to view mode when selection changes
+  useEffect(() => {
+    setEditMode(false);
+  }, [selectedId]);
 
   // PUBLIC_INTERFACE
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // Derived notes array respecting current search query for NotesList
+  // Derived notes array for NotesList
   const notesArray = useMemo(() => {
     const { notesById, order } = state;
     return order.map((id) => notesById[id]).filter(Boolean);
@@ -91,57 +98,55 @@ function App() {
     });
   }, [notesArray, state.query]);
 
-  const currentNote = state.selectedNoteId ? state.notesById[state.selectedNoteId] : null;
-
-  // Track edit mode locally: view vs editor
-  const [editMode, setEditMode] = useState(false);
-  useEffect(() => {
-    // If selection changes, default to view mode
-    setEditMode(false);
-  }, [state.selectedNoteId]);
-
   // Selection handler from list
   const handleSelectNote = useCallback(
     (id) => {
       actions.selectNote(id);
       setEditMode(false);
+      // Navigate to hash route for selected note
+      navigate(`/note/${id}`);
     },
-    [actions]
+    [actions, navigate]
   );
 
   // Save handler from NoteEditor: optimistic update then persist
   const handleSaveNote = useCallback(
     async (id, updates) => {
       try {
-        // optimistic update
         actions.updateNote(id, updates);
         setEditMode(false);
         actions.setError(null);
-        // persist
         await notesApi.updateNote(id, updates);
+        // After save, ensure URL reflects selected note
+        navigate(`/note/${id}`);
       } catch (e) {
-        // surface error inline via context
         actions.setError(e?.message || 'Failed to save note');
       }
     },
-    [actions]
+    [actions, navigate]
   );
 
-  // Delete with confirmation and selection fallback handled by reducer
+  // Delete with confirmation and navigation fallback
   const handleDeleteNote = useCallback(
     async (id) => {
       const confirmed = window.confirm('Delete this note? This action cannot be undone.');
       if (!confirmed) return;
       try {
-        // Optimistic remove
         actions.deleteNote(id);
         actions.setError(null);
         await notesApi.deleteNote(id);
+        // After delete: go to next selected if exists, else home
+        const nextId = (state.order || []).find((nid) => nid !== id) || null;
+        if (nextId) {
+          navigate(`/note/${nextId}`);
+        } else {
+          navigate(`/`);
+        }
       } catch (e) {
         actions.setError(e?.message || 'Failed to delete note');
       }
     },
-    [actions]
+    [actions, navigate, state.order]
   );
 
   // Start editing current note
@@ -179,12 +184,11 @@ function App() {
             </div>
           ) : null}
 
-          {/* When there are notes or query, show list and view/editor; otherwise friendly empty state */}
           <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
             <section aria-label="Notes list panel">
               <NotesList
                 notes={notesArray}
-                selectedId={state.selectedNoteId}
+                selectedId={selectedId}
                 onSelect={handleSelectNote}
                 searchable={true}
                 searchQuery={state.query}
@@ -213,6 +217,19 @@ function App() {
         </main>
       </div>
     </div>
+  );
+}
+
+// PUBLIC_INTERFACE
+function App() {
+  /**
+   * Wrap AppInner with RouterProvider to supply hash routing.
+   * Keeps components router-agnostic; only App coordinates route <-> store.
+   */
+  return (
+    <RouterProvider>
+      <AppInner />
+    </RouterProvider>
   );
 }
 
