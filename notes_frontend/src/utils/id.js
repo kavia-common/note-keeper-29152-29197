@@ -1,7 +1,9 @@
+/* global BigInt */
 //
 // ID generation utilities.
 // Provides a collision-resistant ID generator for notes using a timestamp
 // and a random component. Attempts to use crypto.getRandomValues when available.
+//
 //
 
 /**
