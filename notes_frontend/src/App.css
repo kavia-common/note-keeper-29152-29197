@@ -1,32 +1,10 @@
-/* CSS Variables for Theme Management */
-:root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #282c34;
-  --text-secondary: #61dafb;
-  --border-color: #e9ecef;
-  --button-bg: #007bff;
-  --button-text: #ffffff;
-}
-
-[data-theme="dark"] {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #282c34;
-  --text-primary: #ffffff;
-  --text-secondary: #61dafb;
-  --border-color: #404040;
-  --button-bg: #0056b3;
-  --button-text: #ffffff;
-}
-
+/* Ocean Professional component-scoped utilities to complement global theme tokens */
 .App {
   text-align: center;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--bg);
+  color: var(--text);
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--transition-slow), color var(--transition-slow);
 }
 
 .App-logo {
@@ -40,57 +18,59 @@
   }
 }
 
+/* Demonstration header area, uses surface color and subtle border */
 .App-header {
-  background-color: var(--bg-secondary);
+  background-color: var(--surface);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease;
+  color: var(--text);
+  transition: background-color var(--transition-slow);
   position: relative;
+  border-top: 4px solid rgba(37, 99, 235, 0.08);
 }
 
+/* Link style demo */
 .App-link {
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
+  color: var(--color-primary);
+  transition: color var(--transition);
+}
+.App-link:hover {
+  color: #1d4ed8;
 }
 
+/* Theme toggle button adopts tokens */
 .theme-toggle {
   position: absolute;
   top: 20px;
   right: 20px;
-  background-color: var(--button-bg);
-  color: var(--button-text);
-  border: none;
-  border-radius: 8px;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-md);
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-fast), box-shadow var(--transition), background-color var(--transition);
+  box-shadow: var(--shadow-1);
 }
-
 .theme-toggle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  opacity: 0.9;
+  box-shadow: var(--shadow-2);
+  opacity: 0.98;
 }
-
 .theme-toggle:active {
   transform: translateY(0);
 }
 
+/* Keyframes retained for CRA logo */
 @keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Responsive design for mobile */

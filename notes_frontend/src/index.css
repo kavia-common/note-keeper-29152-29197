@@ -1,13 +1,19 @@
+/* Import global theme tokens and utilities */
+@import url("./styles/theme.css");
+
+/* Keep CRA base hints, but most base styles now come from theme.css */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Code font fallback */
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: var(--font-mono);
+}
+
+/* Provide a simple gradient backdrop option on the app root when desired */
+#root.ocean-gradient-bg {
+  min-height: 100%;
 }
