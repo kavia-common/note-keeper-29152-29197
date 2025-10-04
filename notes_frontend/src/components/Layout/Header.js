@@ -6,7 +6,7 @@ import notesApi from '../../api/notesApi';
  * Header component for the app shell.
  * Displays the app title, global search, "New Note" action, and a theme toggle button.
  * Search dispatches SET_SEARCH_QUERY into NotesContext state.
- * New Note triggers local storage create via notesApi and updates context.
+ * New Note triggers local storage create via notesApi and updates context and selection.
  */
 // PUBLIC_INTERFACE
 export default function Header({ onToggleTheme, currentTheme = 'light' }) {
@@ -27,8 +27,10 @@ export default function Header({ onToggleTheme, currentTheme = 'light' }) {
     try {
       actions.setLoading(true);
       const created = await notesApi.createNote({ title: '', content: '' });
+      // Optimistic add + select
       actions.createNote(created);
       actions.selectNote(created.id);
+      actions.setError(null);
     } catch (e) {
       actions.setError(e?.message || 'Failed to create note');
     } finally {

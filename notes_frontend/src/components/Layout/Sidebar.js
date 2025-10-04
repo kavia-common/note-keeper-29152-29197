@@ -1,21 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { useNotesContext } from '../../context/NotesContext';
+import { useNotesContext, NotesActionTypes } from '../../context/NotesContext';
+import { NotesList } from '../Notes';
 
 /**
  * Sidebar container for search and notes list navigation.
  * - Responsive: collapses under 1024px using internal toggle (no new deps)
- * - Provides slots: Top controls (collapse), Search summary, and NotesList mount point placeholder
+ * - Provides slots: Top controls (collapse), search summary, and NotesList
  * - Keyboard navigable with ARIA attributes
  */
 // PUBLIC_INTERFACE
 export default function Sidebar({ initialCollapsed = false }) {
-  const { state } = useNotesContext();
+  const { state, actions, dispatch } = useNotesContext();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
 
   const resultSummary = useMemo(() => {
     const total = state.order.length;
     const q = (state.query || '').trim();
-    // Summary text changes when searching
     if (!q) return `${total} note${total === 1 ? '' : 's'}`;
     return `“${q}” • ${total} match${total === 1 ? '' : 'es'}`;
   }, [state.order.length, state.query]);
@@ -27,6 +27,8 @@ export default function Sidebar({ initialCollapsed = false }) {
     }),
     [collapsed]
   );
+
+  const notesArray = useMemo(() => state.order.map((id) => state.notesById[id]).filter(Boolean), [state.order, state.notesById]);
 
   return (
     <aside
@@ -67,7 +69,7 @@ export default function Sidebar({ initialCollapsed = false }) {
         </button>
       </div>
 
-      {/* SearchBar slot / summary area */}
+      {/* Search summary area */}
       <div
         className="sidebar-search-slot card"
         role="region"
@@ -87,72 +89,14 @@ export default function Sidebar({ initialCollapsed = false }) {
         </div>
       </div>
 
-      {/* NotesList mount point (placeholder for now) */}
-      <nav
-        className="sidebar-list border-subtle rounded-lg"
-        role="navigation"
-        aria-label="Notes list"
-        style={{
-          padding: 'var(--space-2)',
-          maxHeight: '60vh',
-          overflow: 'auto',
-        }}
-      >
-        <ul
-          role="list"
-          aria-live="polite"
-          aria-busy={state.loading ? 'true' : 'false'}
-          style={{ listStyle: 'none', margin: 0, padding: 0 }}
-        >
-          {/* Placeholder: would render actual NotesList items here */}
-          {state.order.length === 0 ? (
-            <li
-              style={{
-                padding: 'var(--space-3)',
-                color: 'var(--neutral-500)',
-                textAlign: 'center',
-              }}
-            >
-              {state.query ? 'No matches.' : 'No notes yet. Use “New Note” to get started.'}
-            </li>
-          ) : (
-            state.order.map((id) => (
-              <li
-                key={id}
-                tabIndex={0}
-                className="focus-ring"
-                role="link"
-                aria-label={`Open note ${id}`}
-                style={{
-                  padding: '0.5rem 0.625rem',
-                  borderRadius: 'var(--radius-sm)',
-                  marginBottom: '0.25rem',
-                  transition: 'background-color var(--transition)',
-                }}
-                onKeyDown={(e) => {
-                  // Basic keyboard hint: Enter to "open" (no-op for now)
-                  if (e.key === 'Enter') {
-                    // placeholder for selection action in later step
-                  }
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
-                  {state.notesById[id]?.title || 'Untitled'}
-                </div>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-500)' }}>
-                  {new Date(state.notesById[id]?.updatedAt || state.notesById[id]?.createdAt || Date.now()).toLocaleString()}
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      </nav>
+      {/* Notes list wired to global state */}
+      <NotesList
+        notes={notesArray}
+        selectedId={state.selectedNoteId}
+        onSelect={(id) => actions.selectNote(id)}
+        searchable={false}
+        ariaLabel="Notes list"
+      />
 
       {/* Expand handle for small screens when collapsed */}
       {collapsed && (
