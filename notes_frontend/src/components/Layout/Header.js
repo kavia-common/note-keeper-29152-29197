@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { useNotesContext, NotesActionTypes } from '../../context/NotesContext';
 import notesApi from '../../api/notesApi';
 
@@ -12,6 +12,7 @@ import notesApi from '../../api/notesApi';
 export default function Header({ onToggleTheme, currentTheme = 'light' }) {
   /** Header displays app title, search, new note, and theme toggle */
   const { state, dispatch, actions } = useNotesContext();
+  const liveRef = useRef(null);
 
   // Update search query in context as user types
   const onSearchChange = useCallback(
@@ -31,6 +32,10 @@ export default function Header({ onToggleTheme, currentTheme = 'light' }) {
       actions.createNote(created);
       actions.selectNote(created.id);
       actions.setError(null);
+      // Announce creation politely
+      if (liveRef.current) {
+        liveRef.current.textContent = 'New note created';
+      }
     } catch (e) {
       actions.setError(e?.message || 'Failed to create note');
     } finally {
@@ -39,7 +44,7 @@ export default function Header({ onToggleTheme, currentTheme = 'light' }) {
   }, [actions]);
 
   return (
-    <header className="app-header" role="banner" aria-label="Application header">
+    <header className="app-header header-gradient" role="banner" aria-label="Application header">
       <div className="title" aria-label="Application title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span aria-hidden="true" style={{ color: 'var(--color-primary)' }}>📝</span>
         <span>Notes</span>
@@ -77,6 +82,7 @@ export default function Header({ onToggleTheme, currentTheme = 'light' }) {
         >
           {currentTheme === 'light' ? '🌙 Dark' : '☀️ Light'}
         </button>
+        <span className="sr-only" aria-live="polite" aria-atomic="true" ref={liveRef}></span>
       </div>
     </header>
   );

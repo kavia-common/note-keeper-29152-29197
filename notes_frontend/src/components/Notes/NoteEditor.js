@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * NoteEditor allows editing of a note's title and content.
- * Provides Save, Cancel, and Delete with basic validation and inline errors.
+ * Provides Save, Cancel (Esc), and Delete with validation and inline errors.
  * Router-agnostic: actions are raised through props.
  */
 // PUBLIC_INTERFACE
@@ -23,11 +23,16 @@ export default function NoteEditor({
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [errors, setErrors] = useState({});
+  const titleRef = useRef(null);
+  const contentRef = useRef(null);
+  const alertRef = useRef(null);
 
   useEffect(() => {
     setTitle(note?.title || '');
     setContent(note?.content || '');
     setErrors({});
+    // Focus title when entering edit mode
+    setTimeout(() => titleRef.current?.focus(), 0);
   }, [note?.id]);
 
   const times = useMemo(() => {
@@ -54,6 +59,8 @@ export default function NoteEditor({
     const nextErrors = validate ? validate(payload) : {};
     setErrors(nextErrors || {});
     if (nextErrors && Object.keys(nextErrors).length > 0) {
+      // Move focus to alert for screen readers
+      setTimeout(() => alertRef.current?.focus(), 0);
       return;
     }
     if (onSave) onSave(note.id, payload);
@@ -63,11 +70,24 @@ export default function NoteEditor({
     if (onDelete) onDelete(note.id);
   };
 
+  const onKeyDownForm = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onCancel && onCancel(note.id);
+    }
+  };
+
+  const titleHasError = Boolean(errors.title);
+  const contentHasError = Boolean(errors.content);
+  const formHasError = Boolean(errors.form);
+
   return (
     <form
       className="card"
       role="form"
       aria-label="Edit note"
+      aria-describedby={formHasError ? 'form-error' : undefined}
+      onKeyDown={onKeyDownForm}
       onSubmit={(e) => {
         e.preventDefault();
         handleSave();
@@ -77,13 +97,14 @@ export default function NoteEditor({
         <label htmlFor="note-title" className="sr-only">Title</label>
         <input
           id="note-title"
+          ref={titleRef}
           className="input focus-ring"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title"
-          aria-invalid={errors.title ? 'true' : 'false'}
-          aria-describedby={errors.title ? 'title-error' : undefined}
+          aria-invalid={titleHasError ? 'true' : 'false'}
+          aria-describedby={titleHasError ? 'title-error' : undefined}
         />
       </div>
 
@@ -91,20 +112,23 @@ export default function NoteEditor({
         <label htmlFor="note-content" className="sr-only">Content</label>
         <textarea
           id="note-content"
+          ref={contentRef}
           className="textarea focus-ring"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Write your note here..."
           rows={12}
-          aria-invalid={errors.content ? 'true' : 'false'}
-          aria-describedby={errors.content ? 'content-error' : undefined}
+          aria-invalid={contentHasError ? 'true' : 'false'}
+          aria-describedby={contentHasError ? 'content-error' : undefined}
         />
       </div>
 
-      {errors.form && (
+      {(formHasError || titleHasError || contentHasError) && (
         <div
           id="form-error"
+          ref={alertRef}
           role="alert"
+          tabIndex={-1}
           style={{
             color: 'white',
             background: 'var(--color-error)',
@@ -113,7 +137,7 @@ export default function NoteEditor({
             marginBottom: 'var(--space-2)',
           }}
         >
-          {errors.form}
+          {errors.form || errors.title || errors.content}
         </div>
       )}
       {errors.title && (

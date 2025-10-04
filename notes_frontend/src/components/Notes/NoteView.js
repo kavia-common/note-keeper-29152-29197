@@ -53,6 +53,7 @@ export default function NoteView({ note = null, onEdit }) {
 
       <section aria-label="Note body">
         <pre
+          aria-label="Note content body"
           style={{
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-word',

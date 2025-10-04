@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNotesContext, NotesActionTypes } from '../../context/NotesContext';
+import { useNotesContext } from '../../context/NotesContext';
 import { NotesList } from '../Notes';
 
 /**
@@ -10,7 +10,7 @@ import { NotesList } from '../Notes';
  */
 // PUBLIC_INTERFACE
 export default function Sidebar({ initialCollapsed = false }) {
-  const { state, actions, dispatch } = useNotesContext();
+  const { state, actions } = useNotesContext();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
 
   const resultSummary = useMemo(() => {

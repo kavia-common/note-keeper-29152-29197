@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import './styles/theme.css';
 import Header from './components/Layout/Header';
@@ -7,6 +7,7 @@ import { NotesList, NoteView, NoteEditor } from './components/Notes';
 import notesApi from './api/notesApi';
 import { useNotesContext, NotesActionTypes } from './context/NotesContext';
 import { useAppRouter, RouterProvider } from './routes/AppRouter';
+import { InlineError, Spinner } from './components/Common';
 
 /**
  * Root application shell for the Notes app.
@@ -18,6 +19,7 @@ function AppInner() {
   const [theme, setTheme] = useState('light');
   const { state, actions, dispatch } = useNotesContext();
   const { selectedId, navigate } = useAppRouter();
+  const errorRef = useRef(null);
 
   // Apply theme to document root so CSS variables update globally
   useEffect(() => {
@@ -76,6 +78,13 @@ function AppInner() {
   useEffect(() => {
     setEditMode(false);
   }, [selectedId]);
+
+  // Focus error banner when error appears
+  useEffect(() => {
+    if (state.error) {
+      setTimeout(() => errorRef.current?.focus(), 0);
+    }
+  }, [state.error]);
 
   // PUBLIC_INTERFACE
   const toggleTheme = () => {
@@ -167,21 +176,20 @@ function AppInner() {
       {/* Content area with sidebar and main pane */}
       <div className="app-content">
         <Sidebar />
-        <main className="app-main" role="main" aria-label="Main content area" aria-busy={state.loading ? 'true' : 'false'}>
+        <main
+          className="app-main"
+          role="main"
+          aria-label="Main content area"
+          aria-busy={state.loading ? 'true' : 'false'}
+        >
           {/* Inline error surface */}
           {state.error ? (
-            <div
-              role="alert"
-              className="mb-2"
-              style={{
-                color: 'white',
-                background: 'var(--color-error)',
-                padding: '0.5rem 0.75rem',
-                borderRadius: 'var(--radius-sm)',
-              }}
-            >
-              {state.error}
-            </div>
+            <InlineError
+              id="global-error"
+              message={state.error}
+              focusable
+              refEl={errorRef}
+            />
           ) : null}
 
           <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
@@ -213,7 +221,10 @@ function AppInner() {
             </section>
           </div>
 
-          <small className="text-muted">Ocean theme is active. Current theme: {theme}</small>
+          <div aria-live="polite" className="mt-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {state.loading ? <Spinner size={14} /> : null}
+            <small className="text-muted">Ocean theme is active. Current theme: {theme}</small>
+          </div>
         </main>
       </div>
     </div>

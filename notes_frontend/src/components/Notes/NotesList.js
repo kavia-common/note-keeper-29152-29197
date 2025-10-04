@@ -1,13 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import SearchBar from '../Common/SearchBar';
 import EmptyState from '../Common/EmptyState';
 import NoteItem from './NoteItem';
 
 /**
- * NotesList renders a searchable list of notes.
+ * NotesList renders a searchable list of notes with accessible keyboard navigation.
  * - Router-agnostic: selection routed via onSelect(noteId)
  * - Highlights selected note via selectedId prop
- * - Accepts controlled search value or uses internal filter with provided onSearch
+ * - Accepts controlled search value or uses external onSearch
+ * - Keyboard: Up/Down to move active option, Enter to open/edit
  */
 // PUBLIC_INTERFACE
 export default function NotesList({
@@ -38,6 +39,47 @@ export default function NotesList({
   const showEmpty = (notes?.length || 0) === 0;
   const showNoResults = !showEmpty && searchable && (filtered?.length || 0) === 0;
 
+  // Keyboard navigation state for listbox
+  const [activeIndex, setActiveIndex] = useState(() =>
+    Math.max(0, filtered.findIndex((n) => n.id === selectedId))
+  );
+  const listRef = useRef(null);
+
+  // Reset active index when list changes or selection changes
+  useEffect(() => {
+    const idx = filtered.findIndex((n) => n.id === selectedId);
+    if (idx >= 0) {
+      setActiveIndex(idx);
+    } else {
+      setActiveIndex(0);
+    }
+  }, [filtered, selectedId]);
+
+  // Scroll active option into view politely
+  useEffect(() => {
+    const listEl = listRef.current;
+    if (!listEl) return;
+    const option = listEl.querySelector(`[data-index="${activeIndex}"]`);
+    if (option && typeof option.scrollIntoView === 'function') {
+      option.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    }
+  }, [activeIndex]);
+
+  const onKeyDownList = (e) => {
+    if (!filtered.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % filtered.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => (i - 1 + filtered.length) % filtered.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const current = filtered[activeIndex];
+      if (current && onSelect) onSelect(current.id);
+    }
+  };
+
   return (
     <section aria-label="Notes navigation" className="card" style={{ padding: 'var(--space-2)' }}>
       {searchable && (
@@ -54,17 +96,9 @@ export default function NotesList({
       )}
 
       {showEmpty ? (
-        <EmptyState
-          title="No notes"
-          description={emptyMessage}
-          icon="📝"
-        />
+        <EmptyState title="No notes" description={emptyMessage} icon="📝" />
       ) : showNoResults ? (
-        <EmptyState
-          title="No results"
-          description={notFoundMessage}
-          icon="🔎"
-        />
+        <EmptyState title="No results" description={notFoundMessage} icon="🔎" />
       ) : (
         <nav
           role="navigation"
@@ -72,16 +106,32 @@ export default function NotesList({
           className="border-subtle rounded-lg"
           style={{ padding: 'var(--space-2)', maxHeight: '60vh', overflow: 'auto' }}
         >
-          <ul role="list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {filtered.map((note) => (
-              <NoteItem
-                key={note.id}
-                note={note}
-                active={selectedId === note.id}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
+          <div
+            role="listbox"
+            aria-label={ariaLabel}
+            aria-activedescendant={
+              filtered[activeIndex] ? `note-option-${filtered[activeIndex].id}` : undefined
+            }
+            tabIndex={0}
+            className="focus-ring"
+            onKeyDown={onKeyDownList}
+            ref={listRef}
+          >
+            <ul role="list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {filtered.map((note, idx) => (
+                <NoteItem
+                  key={note.id}
+                  note={note}
+                  active={selectedId === note.id}
+                  onSelect={onSelect}
+                  roleOverride="option"
+                  idOverride={`note-option-${note.id}`}
+                  dataIndex={idx}
+                  ariaSelected={selectedId === note.id}
+                />
+              ))}
+            </ul>
+          </div>
         </nav>
       )}
     </section>

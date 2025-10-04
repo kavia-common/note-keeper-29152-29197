@@ -164,6 +164,36 @@ select:focus-visible {
   background-image: linear-gradient(to right, rgba(59, 130, 246, 0.1), var(--bg));
 }
 
+/* Utility text color */
+.text-muted { color: var(--neutral-500); }
+
+/* Inline error class used by InlineError component */
+.inline-error {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+/* Prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover { transform: none; }
+  .spinner { animation: none; }
+  .skeleton { animation: none; }
+}
+
+/* Utility text color */
+.text-muted { color: var(--neutral-500); }
+
+/* Inline error class used by InlineError component */
+.inline-error {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+/* Prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover { transform: none; }
+  .spinner { animation: none; }
+  .skeleton { animation: none; }
+}
+
 /* App shell layout: header, sidebar, main */
 .app-shell {
   min-height: 100%;
@@ -183,6 +213,16 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+/* Subtle gradient overlay for header per Ocean theme */
+.header-gradient {
+  background-image: linear-gradient(to right, rgba(37, 99, 235, 0.08), transparent);
+}
+
+/* Subtle gradient overlay for header per Ocean theme */
+.header-gradient {
+  background-image: linear-gradient(to right, rgba(37, 99, 235, 0.08), transparent);
 }
 
 .app-header .title {
@@ -298,6 +338,24 @@ code, pre {
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+}
+
+/* Animations */
+@keyframes ocean-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ocean-skeleton {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Animations */
+@keyframes ocean-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ocean-skeleton {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
 }
 
 /* Accessibility helpers */
